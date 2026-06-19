@@ -319,11 +319,41 @@ def load_image_any(source: str) -> Image.Image:
     if not src:
         raise ValueError("Image source is empty.")
     if src.lower().startswith(("http://", "https://")):
-        req = Request(src, headers=_BROWSER_HEADERS)
-        with urlopen(req, timeout=30) as resp:
+        from urllib.parse import urlparse, urlunparse, quote
+        p = urlparse(src)
+        # Re-encode path to handle spaces / non-ASCII characters in URLs
+        safe_path = quote(p.path, safe="/%+@")
+        safe_src  = urlunparse(p._replace(path=safe_path))
+        req = Request(safe_src, headers=_BROWSER_HEADERS)
+        with urlopen(req, timeout=60) as resp:
             data = resp.read()
         return Image.open(BytesIO(data)).convert("RGB")
     return Image.open(src).convert("RGB")
+
+
+def _load_combo_product_image(url_list) -> Image.Image:
+    """Load a product image for combo compositing with retry and fallback.
+
+    url_list: a single URL string OR a list of URL strings to try in order.
+    Retries each URL up to 3 times with short backoff before moving on.
+    Raises on total failure.
+    """
+    import time as _time
+    srcs = url_list if isinstance(url_list, list) else [url_list]
+    srcs = [s for s in srcs if s and str(s).strip()]
+    if not srcs:
+        raise ValueError("No image URLs provided for combo slot.")
+    last_exc: Exception = ValueError("No image URLs provided.")
+    for u in srcs:
+        for attempt in range(3):
+            try:
+                return load_image_any(u)
+            except Exception as exc:
+                last_exc = exc
+                log.warning("Combo image load attempt %d failed for %s: %s", attempt + 1, u, exc)
+                if attempt < 2:
+                    _time.sleep(1.5 ** attempt)  # 1s, 1.5s backoff
+    raise last_exc
 
 
 # Thread-safe LRU cache for remote image downloads.
@@ -1765,20 +1795,13 @@ def generate_combo_image_labeled(
     # Load and clean all product images, skip failures
     product_imgs: list = []
     for src_entry in image_sources:
-        srcs = src_entry if isinstance(src_entry, list) else [src_entry]
-        raw = None
-        for u in srcs:
-            try:
-                raw = load_image_any(u).convert("RGBA")
-                break
-            except Exception as exc:
-                log.warning("Combo labeled: could not load image %s: %s", u, exc)
-        if raw is None:
-            log.warning("Combo labeled: all URLs failed for one product slot, skipping")
-            continue
-        raw = _remove_photo_background(raw)
-        raw = _crop_to_content(raw, padding=8)
-        product_imgs.append(raw)
+        try:
+            raw = _load_combo_product_image(src_entry).convert("RGBA")
+            raw = _remove_photo_background(raw)
+            raw = _crop_to_content(raw, padding=8)
+            product_imgs.append(raw)
+        except Exception as exc:
+            log.warning("Combo labeled: all URLs failed for one product slot, skipping: %s", exc)
 
     if not product_imgs:
         product_imgs = [Image.new("RGBA", (200, 300), (240, 240, 240, 255))]
@@ -1990,23 +2013,16 @@ def generate_combo_image(
     CANVAS_W = target_size
     CANVAS_H = target_size
 
-    # ── Load & clean every product image, try all fallback URLs per slot ─────
+    # ── Load & clean every product image, retry each URL up to 3× ───────────
     product_imgs: list = []
     for src_entry in image_sources:
-        srcs = src_entry if isinstance(src_entry, list) else [src_entry]
-        raw = None
-        for u in srcs:
-            try:
-                raw = load_image_any(u).convert("RGBA")
-                break
-            except Exception as exc:
-                log.warning("Combo: could not load image %s: %s", u, exc)
-        if raw is None:
-            log.warning("Combo: all URLs failed for one product slot, skipping")
-            continue
-        raw = _remove_photo_background(raw)
-        raw = _crop_to_content(raw, padding=8)
-        product_imgs.append(raw)
+        try:
+            raw = _load_combo_product_image(src_entry).convert("RGBA")
+            raw = _remove_photo_background(raw)
+            raw = _crop_to_content(raw, padding=8)
+            product_imgs.append(raw)
+        except Exception as exc:
+            log.warning("Combo: all URLs failed for one product slot, skipping: %s", exc)
 
     if not product_imgs:
         Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255)).save(str(out_path), format="PNG")
