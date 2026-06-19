@@ -1747,52 +1747,68 @@ def generate_combo_image_labeled(
     combo_sku: str = "",
     target_size: int = 1200,
 ) -> None:
-    """Generate a single labeled combo image: main product photo + SKU name banner.
-
-    Uses only the first image source (the primary product).  The SKU name is
-    rendered in a dark banner across the bottom of the canvas.
-    """
-    from PIL import ImageDraw as _IDl, ImageFont as _IFl
+    """Generate a combo image showing ALL products with a SKU name banner at bottom."""
+    import math as _math
+    from PIL import ImageDraw as _IDl, ImageFilter as _IFlb, ImageFont as _IFl
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    CANVAS_W  = target_size
-    CANVAS_H  = target_size
-    PADDING   = int(target_size * 0.06)
-    BANNER_H  = int(target_size * 0.10)   # bottom text banner height
-    AVAIL_H   = CANVAS_H - PADDING * 2 - BANNER_H - int(target_size * 0.02)
+    CANVAS_W = target_size
+    CANVAS_H = target_size
+    PADDING  = int(target_size * 0.05)
+    GAP      = int(target_size * 0.03)
+    BANNER_H = int(target_size * 0.09)
+    AVAIL_H  = CANVAS_H - PADDING * 2 - BANNER_H - int(target_size * 0.015)
 
     canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255))
 
-    # ── Product image (first source only) ────────────────────────────────────
-    src = image_sources[0] if image_sources else None
-    if src:
+    n = max(1, len(image_sources))
+
+    # Load and clean all product images
+    product_imgs: list = []
+    for src in image_sources:
         try:
             raw = load_image_any(src).convert("RGBA")
             raw = _remove_photo_background(raw)
             raw = _crop_to_content(raw, padding=8)
         except Exception as exc:
             log.warning("Combo labeled: could not load image %s: %s", src, exc)
-            raw = Image.new("RGBA", (CANVAS_W - PADDING * 2, AVAIL_H), (230, 230, 230, 255))
+            raw = Image.new("RGBA", (200, 300), (230, 230, 230, 255))
+        product_imgs.append(raw)
 
-        raw.thumbnail((CANVAS_W - PADDING * 2, AVAIL_H), Image.LANCZOS)
-        pw, ph = raw.size
-        x = (CANVAS_W - pw) // 2
-        y = PADDING + (AVAIL_H - ph) // 2
+    # Grid dimensions
+    if n > 3:
+        n_cols = 2 if n <= 4 else 3
+        n_rows = _math.ceil(n / n_cols)
+        cell_w = (CANVAS_W - PADDING * 2 - GAP * (n_cols - 1)) // n_cols
+        cell_h = (AVAIL_H - GAP * (n_rows - 1)) // n_rows
+    else:
+        n_cols = n
+        n_rows = 1
+        cell_w = (CANVAS_W - PADDING * 2 - GAP * max(n - 1, 0)) // max(n, 1)
+        cell_h = AVAIL_H
 
-        # Soft drop shadow
-        from PIL import ImageFilter as _IFlb
+    for i, raw in enumerate(product_imgs):
+        row = i // n_cols
+        col = i % n_cols
+        items_in_row = min(n_cols, n - row * n_cols)
+        row_width = items_in_row * cell_w + (items_in_row - 1) * GAP
+        row_x_offset = (CANVAS_W - row_width) // 2
+        raw_copy = raw.copy()
+        raw_copy.thumbnail((cell_w, cell_h), Image.LANCZOS)
+        pw, ph = raw_copy.size
+        x = row_x_offset + col * (cell_w + GAP) + (cell_w - pw) // 2
+        y = PADDING + row * (cell_h + GAP) + (cell_h - ph) // 2
         shadow = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
         smask  = Image.new("L", (pw, ph), 0)
-        from PIL import ImageDraw as _IDsh
-        _IDsh.Draw(smask).ellipse(
+        _IDl.Draw(smask).ellipse(
             [(pw // 8, ph * 3 // 4), (pw * 7 // 8, ph + ph // 8)], fill=50
         )
         smask = smask.filter(_IFlb.GaussianBlur(radius=max(4, pw // 20)))
         shadow.paste(Image.new("RGB", (pw, ph), (0, 0, 0)), (x, y + ph // 20), smask)
         shadow = shadow.filter(_IFlb.GaussianBlur(radius=2))
         canvas.paste(shadow.convert("RGB"), (0, 0), shadow.split()[3])
-        canvas.paste(raw.convert("RGB"), (x, y), raw.split()[3])
+        canvas.paste(raw_copy.convert("RGB"), (x, y), raw_copy.split()[3])
 
     # ── SKU name banner ───────────────────────────────────────────────────────
     banner_y = CANVAS_H - BANNER_H
@@ -1815,7 +1831,6 @@ def generate_combo_image_labeled(
     if font is None:
         font = _IFl.load_default()
 
-    # Shrink text until it fits within the canvas width
     margin = PADDING
     while font_size > 12:
         try:
@@ -1984,11 +1999,38 @@ def generate_combo_image(
             raw = Image.new("RGBA", (slot_w, MAX_ITEM_H), (230, 230, 230, 255))
         product_imgs.append(raw)
 
-    # ── Fan layout for 4+ products ────────────────────────────────────────────
+    # ── Grid layout for 4+ products ──────────────────────────────────────────
     if n > 3:
-        canvas = _build_fan_canvas(product_imgs, CANVAS_W, CANVAS_H)
+        import math as _math
+        n_cols = 2 if n <= 4 else 3
+        n_rows = _math.ceil(n / n_cols)
+        cell_w = (CANVAS_W - PADDING * 2 - GAP * (n_cols - 1)) // n_cols
+        cell_h = (CANVAS_H - PADDING * 2 - GAP * (n_rows - 1)) // n_rows
+        canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255))
+        for i, raw in enumerate(product_imgs):
+            row = i // n_cols
+            col = i % n_cols
+            items_in_row = min(n_cols, n - row * n_cols)
+            row_width = items_in_row * cell_w + (items_in_row - 1) * GAP
+            row_x_offset = (CANVAS_W - row_width) // 2
+            raw_copy = raw.copy()
+            raw_copy.thumbnail((cell_w, cell_h), Image.LANCZOS)
+            pw, ph = raw_copy.size
+            x = row_x_offset + col * (cell_w + GAP) + (cell_w - pw) // 2
+            y = PADDING + row * (cell_h + GAP) + (cell_h - ph) // 2
+            shadow = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+            smask  = Image.new("L", (pw, ph), 0)
+            from PIL import ImageDraw as _IDg
+            _IDg.Draw(smask).ellipse(
+                [(pw // 8, ph * 3 // 4), (pw * 7 // 8, ph + ph // 8)], fill=50
+            )
+            smask = smask.filter(_IFc.GaussianBlur(radius=max(4, pw // 20)))
+            shadow.paste(Image.new("RGB", (pw, ph), (0, 0, 0)), (x, y + ph // 20), smask)
+            shadow = shadow.filter(_IFc.GaussianBlur(radius=2))
+            canvas.paste(shadow.convert("RGB"), (0, 0), shadow.split()[3])
+            canvas.paste(raw_copy.convert("RGB"), (x, y), raw_copy.split()[3])
         canvas.save(str(out_path), format="PNG")
-        log.info("Combo fan image saved: %s (%d products)", out_path.name, n)
+        log.info("Combo grid image saved: %s (%d products)", out_path.name, n)
         return
 
     # ── Row layout for ≤3 products ────────────────────────────────────────────
