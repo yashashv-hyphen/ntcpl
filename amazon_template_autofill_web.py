@@ -1777,118 +1777,8 @@ def generate_combo_image_labeled(
     combo_sku: str = "",
     target_size: int = 1200,
 ) -> None:
-    """Generate a combo image showing ALL products with a SKU name banner at bottom."""
-    import math as _math
-    from PIL import ImageDraw as _IDl, ImageFilter as _IFlb, ImageFont as _IFl
-    out_path = Path(out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    CANVAS_W = target_size
-    CANVAS_H = target_size
-    PADDING  = int(target_size * 0.02)
-    GAP      = int(target_size * 0.025)
-    BANNER_H = int(target_size * 0.09)
-    AVAIL_H  = CANVAS_H - PADDING * 2 - BANNER_H - int(target_size * 0.015)
-
-    canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255))
-
-    # Load and clean all product images, skip failures
-    product_imgs: list = []
-    for src_entry in image_sources:
-        try:
-            raw = _load_combo_product_image(src_entry).convert("RGBA")
-            raw = _remove_photo_background(raw)
-            raw = _crop_to_content(raw, padding=8)
-            product_imgs.append(raw)
-        except Exception as exc:
-            log.warning("Combo labeled: all URLs failed for one product slot, skipping: %s", exc)
-
-    if not product_imgs:
-        product_imgs = [Image.new("RGBA", (200, 300), (240, 240, 240, 255))]
-
-    n = len(product_imgs)
-
-    # Grid dimensions
-    if n > 3:
-        n_cols = 2 if n <= 4 else 3
-        n_rows = _math.ceil(n / n_cols)
-        cell_w = (CANVAS_W - PADDING * 2 - GAP * (n_cols - 1)) // n_cols
-        cell_h = (AVAIL_H - GAP * (n_rows - 1)) // n_rows
-    else:
-        n_cols = n
-        n_rows = 1
-        cell_w = (CANVAS_W - PADDING * 2 - GAP * max(n - 1, 0)) // max(n, 1)
-        cell_h = AVAIL_H
-
-    for i, raw in enumerate(product_imgs):
-        row = i // n_cols
-        col = i % n_cols
-        items_in_row = min(n_cols, n - row * n_cols)
-        row_width = items_in_row * cell_w + (items_in_row - 1) * GAP
-        row_x_offset = (CANVAS_W - row_width) // 2
-        raw_copy = raw.copy()
-        raw_copy.thumbnail((cell_w, cell_h), Image.LANCZOS)
-        pw, ph = raw_copy.size
-        x = row_x_offset + col * (cell_w + GAP) + (cell_w - pw) // 2
-        y = PADDING + row * (cell_h + GAP) + (cell_h - ph) // 2
-        shadow = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-        smask  = Image.new("L", (pw, ph), 0)
-        _IDl.Draw(smask).ellipse(
-            [(pw // 8, ph * 3 // 4), (pw * 7 // 8, ph + ph // 8)], fill=50
-        )
-        smask = smask.filter(_IFlb.GaussianBlur(radius=max(4, pw // 20)))
-        shadow.paste(Image.new("RGB", (pw, ph), (0, 0, 0)), (x, y + ph // 20), smask)
-        shadow = shadow.filter(_IFlb.GaussianBlur(radius=2))
-        canvas.paste(shadow.convert("RGB"), (0, 0), shadow.split()[3])
-        canvas.paste(raw_copy.convert("RGB"), (x, y), raw_copy.split()[3])
-
-    # ── SKU name banner ───────────────────────────────────────────────────────
-    banner_y = CANVAS_H - BANNER_H
-    draw = _IDl.Draw(canvas)
-    draw.rectangle([(0, banner_y), (CANVAS_W, CANVAS_H)], fill=(30, 30, 30))
-
-    label = combo_sku or "Combo"
-    font_size = max(20, min(BANNER_H - 16, int(CANVAS_W * 0.04)))
-    font = None
-    for font_path in (
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-    ):
-        try:
-            font = _IFl.truetype(font_path, font_size)
-            break
-        except Exception:
-            continue
-    if font is None:
-        font = _IFl.load_default()
-
-    margin = PADDING
-    while font_size > 12:
-        try:
-            bbox = draw.textbbox((0, 0), label, font=font)
-            tw = bbox[2] - bbox[0]
-        except Exception:
-            tw = len(label) * font_size * 0.6
-        if tw <= CANVAS_W - margin * 2:
-            break
-        font_size -= 2
-        try:
-            font = _IFl.truetype(font.path, font_size)  # type: ignore[attr-defined]
-        except Exception:
-            break
-
-    try:
-        bbox = draw.textbbox((0, 0), label, font=font)
-        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    except Exception:
-        tw, th = len(label) * font_size, font_size
-    tx = (CANVAS_W - tw) // 2
-    ty = banner_y + (BANNER_H - th) // 2
-    draw.text((tx, ty), label, fill=(255, 255, 255), font=font)
-
-    canvas.save(str(out_path), format="PNG")
-    log.info("Combo labeled image saved: %s", out_path.name)
+    """Generate a combo image showing ALL products — no text, original colors preserved."""
+    generate_combo_image(image_sources, out_path, target_size=target_size)
 
 
 def _safe_alpha_composite(dst: "Image.Image", src: "Image.Image", x: int, y: int) -> None:
@@ -2013,13 +1903,12 @@ def generate_combo_image(
     CANVAS_W = target_size
     CANVAS_H = target_size
 
-    # ── Load & clean every product image, retry each URL up to 3× ───────────
+    # ── Load product images — crop to product area, preserve original colors ──
     product_imgs: list = []
     for src_entry in image_sources:
         try:
-            raw = _load_combo_product_image(src_entry).convert("RGBA")
-            raw = _remove_photo_background(raw)
-            raw = _crop_to_content(raw, padding=8)
+            raw = _load_combo_product_image(src_entry).convert("RGB")
+            raw = _crop_to_product_rgb(raw, padding=30)
             product_imgs.append(raw)
         except Exception as exc:
             log.warning("Combo: all URLs failed for one product slot, skipping: %s", exc)
@@ -2052,23 +1941,12 @@ def generate_combo_image(
             pw, ph = raw_copy.size
             x = row_x_offset + col * (cell_w + GAP) + (cell_w - pw) // 2
             y = PADDING + row * (cell_h + GAP) + (cell_h - ph) // 2
-            shadow = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-            smask  = Image.new("L", (pw, ph), 0)
-            from PIL import ImageDraw as _IDg
-            _IDg.Draw(smask).ellipse(
-                [(pw // 8, ph * 3 // 4), (pw * 7 // 8, ph + ph // 8)], fill=50
-            )
-            smask = smask.filter(_IFc.GaussianBlur(radius=max(4, pw // 20)))
-            shadow.paste(Image.new("RGB", (pw, ph), (0, 0, 0)), (x, y + ph // 20), smask)
-            shadow = shadow.filter(_IFc.GaussianBlur(radius=2))
-            canvas.paste(shadow.convert("RGB"), (0, 0), shadow.split()[3])
-            canvas.paste(raw_copy.convert("RGB"), (x, y), raw_copy.split()[3])
+            canvas.paste(raw_copy, (x, y))
         canvas.save(str(out_path), format="PNG")
         log.info("Combo grid image saved: %s (%d products)", out_path.name, n)
         return
 
     # ── Row layout for ≤3 products ────────────────────────────────────────────
-    # Tight padding so products fill the frame; bottom-anchor for shelf-style look
     PADDING    = int(target_size * 0.02)
     GAP        = int(target_size * 0.025)
     MAX_ITEM_H = CANVAS_H - PADDING * 2
@@ -2078,22 +1956,9 @@ def generate_combo_image(
     for i, raw in enumerate(product_imgs):
         raw.thumbnail((slot_w, MAX_ITEM_H), Image.LANCZOS)
         pw, ph = raw.size
-
         x = PADDING + i * (slot_w + GAP) + (slot_w - pw) // 2
-        y = CANVAS_H - PADDING - ph  # bottom-anchor: products sit on virtual shelf
-
-        # Soft drop shadow
-        shadow = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-        smask  = Image.new("L", (pw, ph), 0)
-        from PIL import ImageDraw as _IDc
-        _IDc.Draw(smask).ellipse(
-            [(pw // 8, ph * 3 // 4), (pw * 7 // 8, ph + ph // 8)], fill=50
-        )
-        smask = smask.filter(_IFc.GaussianBlur(radius=max(4, pw // 20)))
-        shadow.paste(Image.new("RGB", (pw, ph), (0, 0, 0)), (x, y + ph // 20), smask)
-        shadow = shadow.filter(_IFc.GaussianBlur(radius=2))
-        canvas.paste(shadow.convert("RGB"), (0, 0), shadow.split()[3])
-        canvas.paste(raw.convert("RGB"), (x, y), raw.split()[3])
+        y = CANVAS_H - PADDING - ph
+        canvas.paste(raw, (x, y))
 
     canvas.save(str(out_path), format="PNG")
     log.info("Combo image saved: %s (%d products)", out_path.name, n)
@@ -2150,6 +2015,43 @@ def _crop_to_content(img: Image.Image, padding: int = 12) -> Image.Image:
             return img
         rmin, rmax = np.where(rows)[0][[0, -1]]
         cmin, cmax = np.where(cols)[0][[0, -1]]
+        rmin = max(0, rmin - padding)
+        rmax = min(img.height - 1, rmax + padding)
+        cmin = max(0, cmin - padding)
+        cmax = min(img.width  - 1, cmax + padding)
+        return img.crop((cmin, rmin, cmax + 1, rmax + 1))
+    except Exception:
+        return img
+
+
+def _crop_to_product_rgb(img: Image.Image, padding: int = 30) -> Image.Image:
+    """Crop an RGB image to the bounding box of non-background content.
+
+    Does NOT modify any pixel colors — purely finds where the product is and
+    crops away the surrounding background padding (grey/white studio backdrop).
+    """
+    try:
+        import numpy as np
+        rgb = np.array(img.convert("RGB"), dtype=np.float32)
+        h, w = rgb.shape[:2]
+        # Sample only the four corners + edge midpoints (never center) so the
+        # background estimate is never contaminated by product pixels
+        corners = np.array([
+            rgb[0, 0], rgb[0, -1], rgb[-1, 0], rgb[-1, -1],
+            rgb[0, w // 2], rgb[-1, w // 2],
+            rgb[h // 2, 0], rgb[h // 2, -1],
+        ])
+        bg = corners.mean(axis=0)
+        dist = np.sqrt(((rgb - bg) ** 2).sum(axis=2))
+        # Use 25% of max-distance as threshold; floor at 40 to handle gradients
+        threshold = max(40.0, dist.max() * 0.25)
+        mask = dist > threshold
+        rows = np.any(mask, axis=1)
+        cols = np.any(mask, axis=0)
+        if not rows.any() or not cols.any():
+            return img
+        rmin, rmax = int(np.where(rows)[0][0]),  int(np.where(rows)[0][-1])
+        cmin, cmax = int(np.where(cols)[0][0]),  int(np.where(cols)[0][-1])
         rmin = max(0, rmin - padding)
         rmax = min(img.height - 1, rmax + padding)
         cmin = max(0, cmin - padding)
