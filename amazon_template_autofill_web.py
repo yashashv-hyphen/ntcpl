@@ -1764,14 +1764,21 @@ def generate_combo_image_labeled(
 
     # Load and clean all product images, skip failures
     product_imgs: list = []
-    for src in image_sources:
-        try:
-            raw = load_image_any(src).convert("RGBA")
-            raw = _remove_photo_background(raw)
-            raw = _crop_to_content(raw, padding=8)
-            product_imgs.append(raw)
-        except Exception as exc:
-            log.warning("Combo labeled: could not load image %s: %s", src, exc)
+    for src_entry in image_sources:
+        srcs = src_entry if isinstance(src_entry, list) else [src_entry]
+        raw = None
+        for u in srcs:
+            try:
+                raw = load_image_any(u).convert("RGBA")
+                break
+            except Exception as exc:
+                log.warning("Combo labeled: could not load image %s: %s", u, exc)
+        if raw is None:
+            log.warning("Combo labeled: all URLs failed for one product slot, skipping")
+            continue
+        raw = _remove_photo_background(raw)
+        raw = _crop_to_content(raw, padding=8)
+        product_imgs.append(raw)
 
     if not product_imgs:
         product_imgs = [Image.new("RGBA", (200, 300), (240, 240, 240, 255))]
@@ -1983,16 +1990,23 @@ def generate_combo_image(
     CANVAS_W = target_size
     CANVAS_H = target_size
 
-    # ── Load & clean every product image, skip failures ───────────────────────
+    # ── Load & clean every product image, try all fallback URLs per slot ─────
     product_imgs: list = []
-    for src in image_sources:
-        try:
-            raw = load_image_any(src).convert("RGBA")
-            raw = _remove_photo_background(raw)
-            raw = _crop_to_content(raw, padding=8)
-            product_imgs.append(raw)
-        except Exception as exc:
-            log.warning("Combo: could not load/process image %s: %s", src, exc)
+    for src_entry in image_sources:
+        srcs = src_entry if isinstance(src_entry, list) else [src_entry]
+        raw = None
+        for u in srcs:
+            try:
+                raw = load_image_any(u).convert("RGBA")
+                break
+            except Exception as exc:
+                log.warning("Combo: could not load image %s: %s", u, exc)
+        if raw is None:
+            log.warning("Combo: all URLs failed for one product slot, skipping")
+            continue
+        raw = _remove_photo_background(raw)
+        raw = _crop_to_content(raw, padding=8)
+        product_imgs.append(raw)
 
     if not product_imgs:
         Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255)).save(str(out_path), format="PNG")
@@ -2766,15 +2780,13 @@ def read_image_catalog(path: Path) -> Dict[str, List[str]]:
 
     header = [str(c or "").strip().lower() for c in rows[0]]
     sku_col = 0
-    url_cols: List[int] = []
-    for i, h in enumerate(header):
-        if i == 0:
-            continue
-        if "url" in h or "image" in h:
-            url_cols.append(i)
-
+    _URL_KW = ("url", "image", "img", "photo", "picture", "link", "src", "media", "file")
+    url_cols: List[int] = [
+        i for i, h in enumerate(header)
+        if i != 0 and any(kw in h for kw in _URL_KW)
+    ]
     if not url_cols:
-        url_cols = list(range(1, min(11, len(header))))
+        url_cols = list(range(1, len(header)))
 
     catalog: Dict[str, List[str]] = {}
     for row in rows[1:]:
@@ -2784,11 +2796,21 @@ def read_image_catalog(path: Path) -> Dict[str, List[str]]:
         if not sku:
             continue
         urls = []
+        seen_urls: set = set()
         for ci in url_cols:
             if ci < len(row) and row[ci]:
                 u = str(row[ci] or "").strip()
-                if u.lower().startswith(("http://", "https://")):
+                if u.lower().startswith(("http://", "https://")) and u not in seen_urls:
                     urls.append(u)
+                    seen_urls.add(u)
+        # Per-row fallback: scan ALL non-SKU columns for any http URL not already captured
+        if not urls:
+            for ci in range(1, len(row)):
+                if ci < len(row) and row[ci]:
+                    u = str(row[ci] or "").strip()
+                    if u.lower().startswith(("http://", "https://")) and u not in seen_urls:
+                        urls.append(u)
+                        seen_urls.add(u)
         catalog[sku] = urls
 
     if not catalog:
@@ -7925,7 +7947,7 @@ def api_process_combo_catalog_stream():
                     # Build this combo's composite image here, inside the worker,
                     # so image generation runs in parallel across combos instead
                     # of as one big sequential phase before any listing starts.
-                    image_sources = [eligible[s][0] for s in source_skus]
+                    image_sources = [eligible[s] for s in source_skus]
                     out_path = combo_dir / f"{combo_sku}_main.png"
                     if images_only:
                         generate_combo_image_labeled(
