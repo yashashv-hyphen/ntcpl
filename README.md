@@ -2,45 +2,63 @@
 
 Automates Amazon product listing creation using AI (Groq, Gemini, OpenAI, FAL, HuggingFace).
 
-## Quick Setup
+## Requirements
 
-### 1. Clone the repo
+- [Docker](https://docs.docker.com/get-docker/) (includes Docker Compose)
+
+That's it. No Python install needed.
+
+## Setup & Run
+
+### Linux / Mac
 ```bash
 git clone https://github.com/yashashv-hyphen/ntcpl.git
 cd ntcpl
+chmod +x setup.sh && ./setup.sh
 ```
 
-### 2. Download the .env file (contains all API keys)
-```bash
-curl -L -o .env https://github.com/yashashv-hyphen/ntcpl/releases/download/v1.0/default.env
+### Windows
+```bat
+git clone https://github.com/yashashv-hyphen/ntcpl.git
+cd ntcpl
+setup.bat
 ```
 
-### 3. Install Python dependencies
+The setup script will:
+1. Download the `.env` file with all API keys from the [v1.0 release](https://github.com/yashashv-hyphen/ntcpl/releases/tag/v1.0)
+2. Build the Docker images
+3. Start both services
+
+Then open **http://localhost:7860** in your browser.
+
+## Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Web UI | 7860 | Upload catalog, fill Amazon templates |
+| Image service | 7861 | AI image generation (internal) |
+
+## Useful commands
+
 ```bash
-pip install -r requirements.txt
-```
+# View logs
+docker compose logs -f
 
-### 4. Run the web app
-```bash
-python amazon_template_autofill_web.py
-```
+# Stop
+docker compose down
 
-Then open `http://localhost:5000` in your browser.
-
-## Docker (alternative)
-
-```bash
-curl -L -o .env https://github.com/yashashv-hyphen/ntcpl/releases/download/v1.0/default.env
-docker-compose up
+# Restart after code changes
+docker compose up --build -d
 ```
 
 ## Environment Variables
 
-All API keys are in the `.env` file available in the [v1.0 release](https://github.com/yashashv-hyphen/ntcpl/releases/tag/v1.0). Download it as shown above.
+All API keys come pre-configured in the `.env` downloaded by the setup script.  
+See `.env.example` for the full list of variables and what they control.
 
-Key providers used:
+Key providers:
 - **Groq** – text generation (primary)
-- **Google Gemini** – vision analysis
+- **Google Gemini** – vision analysis  
 - **FAL** – image generation
 - **HuggingFace** – fallback models
 - **Cloudflare** – Workers AI

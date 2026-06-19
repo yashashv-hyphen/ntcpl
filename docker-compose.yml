@@ -1,22 +1,12 @@
 version: "3.9"
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Both containers use network_mode: host so they share the WSL2 host network
-# stack directly. This bypasses CNI entirely (no firewall plugin, no network
-# namespace), which fixes all the Podman/WSL2 networking errors.
-#
-# Port layout:
-#   excel-service  → http://localhost:7860  (UI, accessible from Windows browser)
-#   image-service  → http://localhost:7861  (internal image generation API)
-# ─────────────────────────────────────────────────────────────────────────────
-
 services:
 
-  # ── Image generation service ─────────────────────────────────────────────────
   image-service:
     build: .
     command: python image_service.py
-    network_mode: host
+    ports:
+      - "7861:7861"
     env_file:
       - .env
     environment:
@@ -27,24 +17,24 @@ services:
       - ./generated_images:/app/generated_images
     restart: unless-stopped
 
-  # ── Excel filling / web UI service ──────────────────────────────────────────
   excel-service:
     build: .
     command: python amazon_template_autofill_web.py --host 0.0.0.0 --port 7860
-    network_mode: host
+    ports:
+      - "7860:7860"
     env_file:
       - .env
     environment:
-      # Reaches image-service via localhost (same host network stack)
-      IMAGE_SERVICE_URL: http://localhost:7861
+      IMAGE_SERVICE_URL: http://image-service:7861
     volumes:
       - ./generated_images:/app/generated_images
       - uploaded_images:/app/uploaded_product_images
       - uploaded_templates:/app/uploaded_excel_templates
       - uploaded_catalogs:/app/uploaded_catalogs
+    depends_on:
+      - image-service
     restart: unless-stopped
 
-# ── Named volumes ────────────────────────────────────────────────────────────
 volumes:
   uploaded_images:
   uploaded_templates:
