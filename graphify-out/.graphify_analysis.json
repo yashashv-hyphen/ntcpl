@@ -1,0 +1,490 @@
+{
+  "communities": {
+    "0": [
+      "amazon_template_autofill",
+      "amazon_template_autofill_all_attrs_by_label",
+      "amazon_template_autofill_apply_values",
+      "amazon_template_autofill_ask_user_for_required",
+      "amazon_template_autofill_build_defaults",
+      "amazon_template_autofill_column_letter_from_index",
+      "amazon_template_autofill_columnmeta",
+      "amazon_template_autofill_create_marketing_images",
+      "amazon_template_autofill_first_attr_by_label",
+      "amazon_template_autofill_get_if_exists",
+      "amazon_template_autofill_gui",
+      "amazon_template_autofill_gui_autofillgui",
+      "amazon_template_autofill_gui_autofillgui_ask_for_missing_required",
+      "amazon_template_autofill_gui_autofillgui_bind_live_updates",
+      "amazon_template_autofill_gui_autofillgui_browse_image_dir",
+      "amazon_template_autofill_gui_autofillgui_browse_output",
+      "amazon_template_autofill_gui_autofillgui_browse_photo",
+      "amazon_template_autofill_gui_autofillgui_browse_template",
+      "amazon_template_autofill_gui_autofillgui_build_layout",
+      "amazon_template_autofill_gui_autofillgui_build_row_values",
+      "amazon_template_autofill_gui_autofillgui_infer_product_type",
+      "amazon_template_autofill_gui_autofillgui_init",
+      "amazon_template_autofill_gui_autofillgui_load_template",
+      "amazon_template_autofill_gui_autofillgui_refresh_preview",
+      "amazon_template_autofill_gui_autofillgui_render_required_inputs",
+      "amazon_template_autofill_gui_autofillgui_save_excel",
+      "amazon_template_autofill_gui_main",
+      "amazon_template_autofill_gui_py_bool",
+      "amazon_template_autofill_gui_py_str",
+      "amazon_template_autofill_hf_client",
+      "amazon_template_autofill_hf_image_model",
+      "amazon_template_autofill_hf_token",
+      "amazon_template_autofill_load_image",
+      "amazon_template_autofill_main",
+      "amazon_template_autofill_match_product_node",
+      "amazon_template_autofill_normalize_text",
+      "amazon_template_autofill_parse_extra_values",
+      "amazon_template_autofill_parse_template_rows",
+      "amazon_template_autofill_py_image",
+      "amazon_template_autofill_py_inferenceclient",
+      "amazon_template_autofill_py_int",
+      "amazon_template_autofill_py_path",
+      "amazon_template_autofill_py_str",
+      "amazon_template_autofill_read_browse_nodes",
+      "amazon_template_autofill_read_column_metadata",
+      "amazon_template_autofill_read_data_definitions",
+      "amazon_template_autofill_read_recommended_node_to_product_type",
+      "amazon_template_autofill_requirementmeta",
+      "amazon_template_autofill_set_if_exists",
+      "amazon_template_autofill_web_flask_app",
+      "amazon_template_autofill_web_load_template_meta",
+      "concept_amazon_listing_pipeline",
+      "tk"
+    ],
+    "1": [
+      "concept_hf_inference_backend",
+      "leash_bundle_product_analysis",
+      "leash_bundle_prompts_used",
+      "ntcpl",
+      "ntcpl_analyze_product",
+      "ntcpl_analyze_product_with_text",
+      "ntcpl_analyze_product_with_vision",
+      "ntcpl_build_prompts",
+      "ntcpl_clear_details_placeholder",
+      "ntcpl_clear_name_placeholder",
+      "ntcpl_display_image",
+      "ntcpl_encode_image_base64",
+      "ntcpl_fill_template",
+      "ntcpl_generate_amazon_images",
+      "ntcpl_generate_amazon_images_worker",
+      "ntcpl_generate_image",
+      "ntcpl_get_api_key",
+      "ntcpl_get_client",
+      "ntcpl_get_product_name",
+      "ntcpl_get_seller_notes",
+      "ntcpl_load_instruction_sections",
+      "ntcpl_load_instructions_for_generation",
+      "ntcpl_on_generation_error",
+      "ntcpl_on_generation_success",
+      "ntcpl_restore_details_placeholder",
+      "ntcpl_restore_name_placeholder",
+      "ntcpl_save_generation_bundle",
+      "ntcpl_set_generate_enabled",
+      "ntcpl_set_status",
+      "ntcpl_slugify",
+      "ntcpl_update_status_from_worker",
+      "ntcpl_upload_image"
+    ],
+    "2": [
+      "amazon_template_autofill_web",
+      "amazon_template_autofill_web_all_attrs_by_label",
+      "amazon_template_autofill_web_api_describe_image",
+      "amazon_template_autofill_web_api_meta",
+      "amazon_template_autofill_web_api_save",
+      "amazon_template_autofill_web_build_product_details_for_instructions",
+      "amazon_template_autofill_web_copy_row_style",
+      "amazon_template_autofill_web_describe_image",
+      "amazon_template_autofill_web_fallback_copy_from_first_image",
+      "amazon_template_autofill_web_first_attr_by_label",
+      "amazon_template_autofill_web_generate_reference_locked_images",
+      "amazon_template_autofill_web_index",
+      "amazon_template_autofill_web_load_image_any",
+      "amazon_template_autofill_web_main",
+      "amazon_template_autofill_web_parse_json_object_from_text",
+      "amazon_template_autofill_web_py_image",
+      "amazon_template_autofill_web_py_int",
+      "amazon_template_autofill_web_rgb_to_name",
+      "amazon_template_autofill_web_sentence_count",
+      "amazon_template_autofill_web_wrap_text_lines"
+    ],
+    "3": [
+      "amazon_template_autofill_web_analyze_product_image",
+      "amazon_template_autofill_web_build_listing_prompt",
+      "amazon_template_autofill_web_copygenerationerror",
+      "amazon_template_autofill_web_extract_hf_chat_text",
+      "amazon_template_autofill_web_extract_json",
+      "amazon_template_autofill_web_fallback_analysis_from_image",
+      "amazon_template_autofill_web_fallback_listing_from_analysis",
+      "amazon_template_autofill_web_generate_amazon_listing",
+      "amazon_template_autofill_web_generate_listing",
+      "amazon_template_autofill_web_hf_client",
+      "amazon_template_autofill_web_hf_token",
+      "amazon_template_autofill_web_py_inferenceclient",
+      "amazon_template_autofill_web_rationale_89",
+      "amazon_template_autofill_web_rationale_93",
+      "amazon_template_autofill_web_refine_listing",
+      "amazon_template_autofill_web_validate_image",
+      "amazon_template_autofill_web_visionapierror",
+      "any",
+      "runtimeerror"
+    ],
+    "4": [
+      "amazon_template_autofill_web_ai_generate_images_from_prompts",
+      "amazon_template_autofill_web_encode_image_b64",
+      "amazon_template_autofill_web_fallback_image_bytes",
+      "amazon_template_autofill_web_hf_image_model",
+      "amazon_template_autofill_web_hf_project_generate_images",
+      "amazon_template_autofill_web_hf_vision_fallback_models",
+      "amazon_template_autofill_web_huggingface_api_key",
+      "amazon_template_autofill_web_huggingface_generate_image_bytes",
+      "amazon_template_autofill_web_huggingface_image_model",
+      "amazon_template_autofill_web_image_data_url_for_hf",
+      "amazon_template_autofill_web_normalize_ai_copy_record",
+      "amazon_template_autofill_web_py_str",
+      "amazon_template_autofill_web_read_image_bytes_any",
+      "amazon_template_autofill_web_reference_conditioning_text",
+      "bytes"
+    ],
+    "5": [
+      "amazon_template_autofill_web_ai_generate_copy_from_image",
+      "amazon_template_autofill_web_analyze_product_hf",
+      "amazon_template_autofill_web_api_ai_generate_assets",
+      "amazon_template_autofill_web_api_ai_generate_row",
+      "amazon_template_autofill_web_apply_ai_assets_to_row",
+      "amazon_template_autofill_web_build_analysis_prompt",
+      "amazon_template_autofill_web_build_instruction_prompts",
+      "amazon_template_autofill_web_fill_template",
+      "amazon_template_autofill_web_hf_analysis_model",
+      "amazon_template_autofill_web_imagevalidationerror",
+      "amazon_template_autofill_web_load_instruction_sections",
+      "amazon_template_autofill_web_py_bool",
+      "amazon_template_autofill_web_rationale_85",
+      "valueerror"
+    ],
+    "6": [
+      "concept_image_generation_instructions_format",
+      "earbuds_bundle_instructions_copy",
+      "image_generation_instructions_document",
+      "leash_bundle_instructions_copy",
+      "ntcpl_web",
+      "ntcpl_web_analyze_product_with_text",
+      "ntcpl_web_analyze_product_with_vision",
+      "ntcpl_web_api_generate",
+      "ntcpl_web_fill_template",
+      "ntcpl_web_generate_image",
+      "ntcpl_web_get_api_key",
+      "ntcpl_web_get_client",
+      "ntcpl_web_index",
+      "ntcpl_web_load_instruction_sections"
+    ],
+    "7": [
+      "leash_infographic_image_customer_features",
+      "leash_infographic_image_faduree_features",
+      "leash_infographic_image_infographic",
+      "leash_infographic_image_leash_product",
+      "leash_infographic_image_legro_blemth",
+      "leash_infographic_image_metal_clip",
+      "leash_infographic_image_nylon_strap",
+      "leash_infographic_image_residritice",
+      "leash_infographic_image_target_use_cases"
+    ],
+    "8": [
+      "amazon_template_autofill_web_analysis_terms",
+      "amazon_template_autofill_web_audit_listing_copy",
+      "amazon_template_autofill_web_extract_visual_keywords",
+      "amazon_template_autofill_web_rationale_1036",
+      "amazon_template_autofill_web_validate_listing",
+      "amazon_template_autofill_web_word_overlap_score",
+      "concept_listing_copy_validation",
+      "float"
+    ],
+    "9": [
+      "leash_20260515_125919_original_product_brass_snap_hook",
+      "leash_20260515_125919_original_product_brown_color",
+      "leash_20260515_125919_original_product_dog_leash_product_type",
+      "leash_20260515_125919_original_product_flat_strap_design",
+      "leash_20260515_125919_original_product_leather_dog_leash",
+      "leash_20260515_125919_original_product_leather_material",
+      "leash_20260515_125919_original_product_white_background_presentation"
+    ],
+    "10": [
+      "ai_product_1_product_1_ai_1_background",
+      "ai_product_1_product_1_ai_1_hardware",
+      "ai_product_1_product_1_ai_1_image_style",
+      "ai_product_1_product_1_ai_1_main_subject",
+      "ai_product_1_product_1_ai_1_material",
+      "ai_product_1_product_1_ai_1_product_category"
+    ],
+    "11": [
+      "amazon_template_autofill_web_api_upload_image",
+      "amazon_template_autofill_web_api_upload_template",
+      "amazon_template_autofill_web_ensure_template_upload_dir",
+      "amazon_template_autofill_web_ensure_upload_dir",
+      "amazon_template_autofill_web_generate",
+      "amazon_template_autofill_web_py_path"
+    ],
+    "12": [
+      "leash_20260515_125919_lifestyle_image",
+      "leash_20260515_125919_lifestyle_image_customer",
+      "leash_20260515_125919_lifestyle_image_mood",
+      "leash_20260515_125919_lifestyle_image_product",
+      "leash_20260515_125919_lifestyle_image_scene",
+      "leash_20260515_125919_lifestyle_image_subject"
+    ],
+    "13": [
+      "ai_product_1_product_1_ai_2_amazon_listing",
+      "ai_product_1_product_1_ai_2_dog_leash",
+      "ai_product_1_product_1_ai_2_image",
+      "ai_product_1_product_1_ai_2_leather_leash",
+      "ai_product_1_product_1_ai_2_product_details_layout"
+    ],
+    "14": [
+      "product_0_product_0_product_0_screenshot_2026_05_14_170728_brass_clip",
+      "product_0_product_0_product_0_screenshot_2026_05_14_170728_brown_leather",
+      "product_0_product_0_product_0_screenshot_2026_05_14_170728_dog_training",
+      "product_0_product_0_product_0_screenshot_2026_05_14_170728_leather_dog_leash",
+      "product_0_product_0_product_0_screenshot_2026_05_14_170728_pet_accessory"
+    ],
+    "15": [
+      "ref_test_ref_test_ai_1_dog_leash",
+      "ref_test_ref_test_ai_1_garbled_text",
+      "ref_test_ref_test_ai_1_image",
+      "ref_test_ref_test_ai_1_outdoor_background",
+      "ref_test_ref_test_ai_1_product_listing"
+    ],
+    "16": [
+      "ref_test_ref_test_ai_2_grey_dog_leash",
+      "ref_test_ref_test_ai_2_product_listing",
+      "ref_test_ref_test_ai_2_product_price",
+      "ref_test_ref_test_ai_2_product_rating",
+      "ref_test_ref_test_ai_2_ui_layout"
+    ],
+    "17": [
+      "uploaded_product_images_product_0_product_0_product_0_product_0_screenshot_2026_05_14_170728_brass_snap_hook",
+      "uploaded_product_images_product_0_product_0_product_0_product_0_screenshot_2026_05_14_170728_brown_leather_material",
+      "uploaded_product_images_product_0_product_0_product_0_product_0_screenshot_2026_05_14_170728_leather_dog_leash",
+      "uploaded_product_images_product_0_product_0_product_0_product_0_screenshot_2026_05_14_170728_pet_accessory"
+    ],
+    "18": [
+      "uploaded_product_images_product_0_product_0_screenshot_2026-05-14_170728_category",
+      "uploaded_product_images_product_0_product_0_screenshot_2026-05-14_170728_hardware",
+      "uploaded_product_images_product_0_product_0_screenshot_2026-05-14_170728_material",
+      "uploaded_product_images_product_0_product_0_screenshot_2026-05-14_170728_product"
+    ],
+    "19": [
+      "uploaded_product_images_product_0_screenshot_2026-05-14_170728_brass_snap_hook",
+      "uploaded_product_images_product_0_screenshot_2026-05-14_170728_brown_leather",
+      "uploaded_product_images_product_0_screenshot_2026-05-14_170728_leather_dog_leash",
+      "uploaded_product_images_product_0_screenshot_2026-05-14_170728_pet_accessory"
+    ],
+    "20": [
+      "wireless_bluetooth_earbuds_20260515_125809_lifestyle_audience",
+      "wireless_bluetooth_earbuds_20260515_125809_lifestyle_image",
+      "wireless_bluetooth_earbuds_20260515_125809_lifestyle_product",
+      "wireless_bluetooth_earbuds_20260515_125809_lifestyle_scene"
+    ],
+    "21": [
+      "amazon_template_autofill_web_hf_vision_model",
+      "amazon_template_autofill_web_hf_vision_model_for_endpoint",
+      "amazon_template_autofill_web_rationale_311"
+    ],
+    "22": [
+      "wireless_bluetooth_earbuds_20260515_125809_features",
+      "wireless_bluetooth_earbuds_20260515_125809_infographic_image",
+      "wireless_bluetooth_earbuds_20260515_125809_product"
+    ],
+    "23": [
+      "wireless_bluetooth_earbuds_20260515_125809_dark_background",
+      "wireless_bluetooth_earbuds_20260515_125809_original_product",
+      "wireless_bluetooth_earbuds_20260515_125809_product_category"
+    ],
+    "24": [
+      "ntcpl_web_flask_app"
+    ],
+    "25": [
+      "earbuds_bundle_product_analysis"
+    ],
+    "26": [
+      "earbuds_bundle_prompts_used"
+    ]
+  },
+  "cohesion": {
+    "0": 0.125544267053701,
+    "1": 0.1310483870967742,
+    "2": 0.16842105263157894,
+    "3": 0.19883040935672514,
+    "4": 0.23809523809523808,
+    "5": 0.24175824175824176,
+    "6": 0.25274725274725274,
+    "7": 0.3611111111111111,
+    "8": 0.2857142857142857,
+    "9": 0.38095238095238093,
+    "10": 0.4,
+    "11": 0.5333333333333333,
+    "12": 0.5333333333333333,
+    "13": 0.6,
+    "14": 0.4,
+    "15": 0.7,
+    "16": 0.6,
+    "17": 0.5,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.6666666666666666,
+    "21": 0.6666666666666666,
+    "22": 0.6666666666666666,
+    "23": 0.6666666666666666,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0
+  },
+  "gods": [
+    {
+      "id": "amazon_template_autofill_web_py_str",
+      "label": "str",
+      "degree": 49
+    },
+    {
+      "id": "amazon_template_autofill_gui_autofillgui",
+      "label": "AutoFillGUI",
+      "degree": 28
+    },
+    {
+      "id": "amazon_template_autofill_py_str",
+      "label": "str",
+      "degree": 20
+    },
+    {
+      "id": "amazon_template_autofill_main",
+      "label": "main()",
+      "degree": 19
+    },
+    {
+      "id": "amazon_template_autofill_web_py_path",
+      "label": "Path",
+      "degree": 17
+    },
+    {
+      "id": "amazon_template_autofill_web_apply_ai_assets_to_row",
+      "label": "apply_ai_assets_to_row()",
+      "degree": 16
+    },
+    {
+      "id": "amazon_template_autofill_web_analyze_product_image",
+      "label": "analyze_product_image()",
+      "degree": 14
+    },
+    {
+      "id": "amazon_template_autofill_columnmeta",
+      "label": "ColumnMeta",
+      "degree": 13
+    },
+    {
+      "id": "amazon_template_autofill_web_generate_amazon_listing",
+      "label": "generate_amazon_listing()",
+      "degree": 13
+    },
+    {
+      "id": "amazon_template_autofill_read_column_metadata",
+      "label": "read_column_metadata()",
+      "degree": 12
+    }
+  ],
+  "surprises": [
+    {
+      "source": "load_instruction_sections()",
+      "target": "load_instruction_sections()",
+      "source_files": [
+        "amazon_template_autofill_web.py",
+        "ntcpl.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "save_generation_bundle()",
+      "target": "leash product_analysis.txt",
+      "source_files": [
+        "ntcpl.py",
+        "generated_images/leash_20260515_125919/product_analysis.txt"
+      ],
+      "confidence": "INFERRED",
+      "relation": "references",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ doc); connects across different repos/directories; peripheral node `leash product_analysis.txt` unexpectedly reaches hub `save_generation_bundle()`"
+    },
+    {
+      "source": "save_generation_bundle()",
+      "target": "leash prompts_used.txt",
+      "source_files": [
+        "ntcpl.py",
+        "generated_images/leash_20260515_125919/prompts_used.txt"
+      ],
+      "confidence": "INFERRED",
+      "relation": "references",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ doc); connects across different repos/directories; peripheral node `leash prompts_used.txt` unexpectedly reaches hub `save_generation_bundle()`"
+    },
+    {
+      "source": "load_instruction_sections()",
+      "target": "load_instruction_sections()",
+      "source_files": [
+        "ntcpl_web.py",
+        "ntcpl.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "semantically_similar_to",
+      "why": "connects across different repos/directories; bridges separate communities; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "fill_template()",
+      "target": "fill_template()",
+      "source_files": [
+        "ntcpl_web.py",
+        "ntcpl.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "semantically_similar_to",
+      "why": "connects across different repos/directories; bridges separate communities; semantically similar concepts with no structural link"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `load_instruction_sections()` connect `Community 1` to `Community 5`, `Community 6`?",
+      "why": "High betweenness centrality (0.085) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `load_instruction_sections()` connect `Community 5` to `Community 1`, `Community 2`, `Community 4`, `Community 6`?",
+      "why": "High betweenness centrality (0.052) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 9 inferred relationships involving `ValueError` (e.g. with `create_marketing_images()` and `.save_excel()`) actually correct?",
+      "why": "`ValueError` has 9 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 3 inferred relationships involving `AutoFillGUI` (e.g. with `ColumnMeta` and `RequirementMeta`) actually correct?",
+      "why": "`AutoFillGUI` has 3 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `main()` (e.g. with `Amazon Listing Pipeline` and `ValueError`) actually correct?",
+      "why": "`main()` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Image`, `InferenceClient`, `Image` to the rest of the system?",
+      "why": "44 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.125544267053701 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

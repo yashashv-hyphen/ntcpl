@@ -1,0 +1,60 @@
+# Amazon Product Image Generation Instructions
+# ============================================================
+# This file is read by ntcpl.py when generating images.
+# Edit the templates below to change style, layout, or focus.
+# Placeholders are filled automatically at generation time:
+#   {product_name}    - name entered in the app
+#   {product_details} - AI-recognized or user-provided product info
+# ============================================================
+
+[PRODUCT_ANALYSIS]
+You are an Amazon listing specialist analyzing a product to be sold on Amazon.
+
+Product name: {product_name}
+Additional notes from seller: {seller_notes}
+
+If a product photo was uploaded, infer visible details (shape, color, materials, packaging, labels, included accessories) and combine them with the product name.
+
+Return a structured summary with these sections:
+PRODUCT CATEGORY:
+KEY FEATURES: (5 bullet points)
+SPECIFICATIONS: (5 bullet points with units where possible)
+CUSTOMER BENEFITS: (3 bullet points)
+TARGET USE CASES: (2-3 short phrases)
+VISUAL DESCRIPTION: (how the product looks for image generation)
+
+Be factual and specific. Use only details supported by the product name, seller notes, or the uploaded photo.
+
+[LIFESTYLE_IMAGE]
+Professional Amazon main-image-quality lifestyle photograph of {product_name}.
+
+Purpose: Show the product in real-life usage for an Amazon listing (not a plain white-background packshot).
+
+Product context:
+{product_details}
+
+Requirements:
+- Show a real person or realistic scene using the product naturally
+- Commercial ecommerce photography, premium lighting, sharp focus on the product
+- Realistic environment matching the target use case
+- Modern advertising style, trustworthy and aspirational
+- Product must match the visual description above (shape, color, branding)
+- No text overlays, no watermarks, no distorted anatomy
+- Ultra realistic, high resolution, Amazon A+ content quality
+
+[INFOGRAPHIC_IMAGE]
+Professional Amazon secondary-image infographic for {product_name}.
+
+Purpose: Educate shoppers with features, benefits, and specifications on a clean layout.
+
+Product context:
+{product_details}
+
+Requirements:
+- White or very light clean background
+- Clear infographic layout with icons, labels, and short callouts
+- Highlight: key features, customer benefits, and specifications from the product context
+- Premium Amazon listing design, readable typography, balanced composition
+- Product render or photo centered; feature callouts around it
+- Commercial advertising style, high-end ecommerce marketing
+- Ultra detailed, sharp, no watermarks

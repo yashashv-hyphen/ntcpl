@@ -1,0 +1,23 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting fal-client
+  Downloading fal_client-1.0.0-py3-none-any.whl (22 kB)
+Collecting asyncstdlib<4,>=3.12.5
+  Downloading asyncstdlib-3.14.0-py3-none-any.whl (44 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.3/44.3 KB 1.3 MB/s eta 0:00:00
+Collecting msgpack<2,>=1.0.7
+  Downloading msgpack-1.1.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (406 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 406.1/406.1 KB 1.1 MB/s eta 0:00:00
+Requirement already satisfied: httpx<1,>=0.21.0 in /home/venom/.local/lib/python3.10/site-packages (from fal-client) (0.28.1)
+Collecting aiofiles<26,>=24.1.0
+  Downloading aiofiles-25.1.0-py3-none-any.whl (14 kB)
+Requirement already satisfied: websockets>=12.0 in /home/venom/.local/lib/python3.10/site-packages (from fal-client) (16.0)
+Requirement already satisfied: httpx-sse<0.5,>=0.4.0 in /home/venom/.local/lib/python3.10/site-packages (from fal-client) (0.4.3)
+Requirement already satisfied: certifi in /home/venom/.local/lib/python3.10/site-packages (from httpx<1,>=0.21.0->fal-client) (2026.5.20)
+Requirement already satisfied: idna in /usr/lib/python3/dist-packages (from httpx<1,>=0.21.0->fal-client) (3.3)
+Requirement already satisfied: anyio in /home/venom/.local/lib/python3.10/site-packages (from httpx<1,>=0.21.0->fal-client) (4.13.0)
+Requirement already satisfied: httpcore==1.* in /home/venom/.local/lib/python3.10/site-packages (from httpx<1,>=0.21.0->fal-client) (1.0.9)
+Requirement already satisfied: h11>=0.16 in /home/venom/.local/lib/python3.10/site-packages (from httpcore==1.*->httpx<1,>=0.21.0->fal-client) (0.16.0)
+Requirement already satisfied: exceptiongroup>=1.0.2 in /home/venom/.local/lib/python3.10/site-packages (from anyio->httpx<1,>=0.21.0->fal-client) (1.3.1)
+Requirement already satisfied: typing_extensions>=4.5 in /home/venom/.local/lib/python3.10/site-packages (from anyio->httpx<1,>=0.21.0->fal-client) (4.15.0)
+Installing collected packages: msgpack, asyncstdlib, aiofiles, fal-client
+Successfully installed aiofiles-25.1.0 asyncstdlib-3.14.0 fal-client-1.0.0 msgpack-1.1.2

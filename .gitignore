@@ -1,0 +1,11 @@
+.claude/
+node_modules/
+__pycache__/
+*.pyc
+New folder (2).zip
+New folder (2)/
+*.zip:Zone.Identifier
+*.xlsx:Zone.Identifier
+.playwright-mcp/
+amazon_template_autofill_web.py.bak
+.env
