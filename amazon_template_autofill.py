@@ -25,7 +25,6 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qs
 from urllib.request import urlopen
 
-from huggingface_hub import InferenceClient
 from openpyxl import load_workbook
 from PIL import Image
 
@@ -224,7 +223,8 @@ def _hf_token(explicit_token: Optional[str] = None) -> str:
     return token
 
 
-def _hf_client(explicit_token: Optional[str] = None) -> InferenceClient:
+def _hf_client(explicit_token: Optional[str] = None):
+    from huggingface_hub import InferenceClient  # noqa: PLC0415
     return InferenceClient(token=_hf_token(explicit_token))
 
 
