@@ -1755,26 +1755,28 @@ def generate_combo_image_labeled(
 
     CANVAS_W = target_size
     CANVAS_H = target_size
-    PADDING  = int(target_size * 0.05)
-    GAP      = int(target_size * 0.03)
+    PADDING  = int(target_size * 0.02)
+    GAP      = int(target_size * 0.025)
     BANNER_H = int(target_size * 0.09)
     AVAIL_H  = CANVAS_H - PADDING * 2 - BANNER_H - int(target_size * 0.015)
 
     canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255))
 
-    n = max(1, len(image_sources))
-
-    # Load and clean all product images
+    # Load and clean all product images, skip failures
     product_imgs: list = []
     for src in image_sources:
         try:
             raw = load_image_any(src).convert("RGBA")
             raw = _remove_photo_background(raw)
             raw = _crop_to_content(raw, padding=8)
+            product_imgs.append(raw)
         except Exception as exc:
             log.warning("Combo labeled: could not load image %s: %s", src, exc)
-            raw = Image.new("RGBA", (200, 300), (230, 230, 230, 255))
-        product_imgs.append(raw)
+
+    if not product_imgs:
+        product_imgs = [Image.new("RGBA", (200, 300), (240, 240, 240, 255))]
+
+    n = len(product_imgs)
 
     # Grid dimensions
     if n > 3:
@@ -1980,28 +1982,30 @@ def generate_combo_image(
 
     CANVAS_W = target_size
     CANVAS_H = target_size
-    PADDING  = int(target_size * 0.06)
-    GAP      = int(target_size * 0.04)
-    MAX_ITEM_H = CANVAS_H - PADDING * 2
 
-    n = len(image_sources)
-
-    # ── Load & clean every product image first ────────────────────────────────
-    slot_w = (CANVAS_W - PADDING * 2 - GAP * max(n - 1, 0)) // max(n, 1)
+    # ── Load & clean every product image, skip failures ───────────────────────
     product_imgs: list = []
     for src in image_sources:
         try:
             raw = load_image_any(src).convert("RGBA")
             raw = _remove_photo_background(raw)
             raw = _crop_to_content(raw, padding=8)
+            product_imgs.append(raw)
         except Exception as exc:
             log.warning("Combo: could not load/process image %s: %s", src, exc)
-            raw = Image.new("RGBA", (slot_w, MAX_ITEM_H), (230, 230, 230, 255))
-        product_imgs.append(raw)
+
+    if not product_imgs:
+        Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255)).save(str(out_path), format="PNG")
+        log.warning("Combo: all images failed, saved blank placeholder")
+        return
+
+    n = len(product_imgs)
 
     # ── Grid layout for 4+ products ──────────────────────────────────────────
     if n > 3:
         import math as _math
+        PADDING = int(target_size * 0.04)
+        GAP     = int(target_size * 0.03)
         n_cols = 2 if n <= 4 else 3
         n_rows = _math.ceil(n / n_cols)
         cell_w = (CANVAS_W - PADDING * 2 - GAP * (n_cols - 1)) // n_cols
@@ -2034,6 +2038,11 @@ def generate_combo_image(
         return
 
     # ── Row layout for ≤3 products ────────────────────────────────────────────
+    # Tight padding so products fill the frame; bottom-anchor for shelf-style look
+    PADDING    = int(target_size * 0.02)
+    GAP        = int(target_size * 0.025)
+    MAX_ITEM_H = CANVAS_H - PADDING * 2
+    slot_w = (CANVAS_W - PADDING * 2 - GAP * max(n - 1, 0)) // max(n, 1)
     canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255))
 
     for i, raw in enumerate(product_imgs):
@@ -2041,7 +2050,7 @@ def generate_combo_image(
         pw, ph = raw.size
 
         x = PADDING + i * (slot_w + GAP) + (slot_w - pw) // 2
-        y = PADDING + (MAX_ITEM_H - ph) // 2
+        y = CANVAS_H - PADDING - ph  # bottom-anchor: products sit on virtual shelf
 
         # Soft drop shadow
         shadow = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))

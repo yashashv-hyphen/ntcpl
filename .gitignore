@@ -9,3 +9,7 @@ New folder (2)/
 .playwright-mcp/
 amazon_template_autofill_web.py.bak
 .env
+generated_images/
+uploaded_product_images/
+uploaded_excel_templates/
+uploaded_catalogs/
