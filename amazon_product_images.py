@@ -7,16 +7,10 @@ Produces four Amazon-compliant image types per product:
   macro       — extreme close-up of key feature
   styled_hero — premium branded backdrop shot
 
-Providers (in priority order):
-  cloudflare  — Cloudflare Workers AI (flux-1-schnell), text-to-image
-  hf          — HuggingFace InferenceClient (flux-1-schnell), text-to-image
-  fal         — fal.ai (flux/schnell), text-to-image, ~$0.003/image
-  a1111       — local AUTOMATIC1111 WebUI server (free, Intel Arc via DirectML)
+Providers:
+  fal         — fal.ai (flux/dev), text-to-image, ~$0.003/image (default)
+  a1111       — local AUTOMATIC1111 / ComfyUI WebUI server (free)
   pil         — PIL compositor fallback, always available
-
-Neither CF nor HF support true image-to-image. Reference product fidelity is
-achieved by embedding a text description of the reference photo into every
-prompt via _condition_prompt_with_reference().
 
 Usage:
     from amazon_product_images import generateProductImages
@@ -35,7 +29,7 @@ Usage:
     images = generateProductImages(
         product=product,
         reference_image="https://example.com/product.jpg",
-        config={"shots": ("main", "lifestyle"), "provider": "cloudflare"},
+        config={"shots": ("main", "lifestyle"), "provider": "fal"},
     )
     # images == {"main": Path("/abs/.../kurti-001_main.png"), "lifestyle": Path(...)}
 """
@@ -61,11 +55,6 @@ log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-CF_ACCOUNT_ID  = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
-CF_API_TOKEN   = os.getenv("CLOUDFLARE_API_TOKEN",  "").strip()
-CF_IMAGE_MODEL = os.getenv("CF_IMAGE_MODEL", "@cf/black-forest-labs/flux-1-schnell").strip()
-CF_AVAILABLE   = bool(CF_ACCOUNT_ID and CF_API_TOKEN)
-
 FAL_API_KEY    = os.getenv("FAL_KEY", "").strip()
 FAL_IMAGE_MODEL = os.getenv("FAL_IMAGE_MODEL", "fal-ai/flux/dev").strip()
 FAL_AVAILABLE  = bool(FAL_API_KEY)
@@ -89,29 +78,12 @@ A1111_URL   = f"http://{A1111_HOST}:{A1111_PORT}"
 A1111_STEPS = int(os.getenv("A1111_STEPS", "1"))   # 1 for sd-turbo, 4 for LCM
 A1111_CFG   = float(os.getenv("A1111_CFG", "0.0"))  # 0.0 for sd-turbo, 1.0–2.0 for LCM
 
-AI_PROVIDER         = os.getenv("AI_PROVIDER", "cloudflare").strip().lower()
+AI_PROVIDER         = os.getenv("AI_PROVIDER", "fal").strip().lower()
 PRODUCT_IMAGE_SIZE  = int(os.getenv("PRODUCT_IMAGE_SIZE", "2048"))
-
-_HF_PLACEHOLDER_TOKENS = {
-    "your_huggingface_api_key_here", "your_hf_api_key_here",
-    "hf_xxx", "placeholder", "changeme",
-}
-
-def _hf_key_valid(key: str) -> bool:
-    if not key:
-        return False
-    kl = key.lower()
-    return kl not in _HF_PLACEHOLDER_TOKENS and not kl.startswith("your_")
-
-HF_AVAILABLE = bool(
-    _hf_key_valid(os.environ.get("HF_TOKEN", "").strip())
-    or _hf_key_valid(os.environ.get("HF_API_KEY", "").strip())
-    or _hf_key_valid(os.environ.get("HUGGINGFACE_API_KEY", "").strip())
-)
 
 SHOT_TYPES = ("main", "lifestyle", "infographic", "macro", "styled_hero")
 
-_VALID_PROVIDERS = {"cloudflare", "hf", "fal", "a1111", "pil", "gemini", "demo"}
+_VALID_PROVIDERS = {"fal", "a1111", "pil", "demo"}
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -134,8 +106,8 @@ def _join(lst: list, sep: str = ", ", limit: int = 3) -> str:
     return sep.join(parts[:limit])
 
 
-def _truncate_prompt(prompt: str, max_chars: int = 500) -> str:
-    """Trim prompt to max_chars to stay within CF FLUX token budget."""
+def _truncate_prompt(prompt: str, max_chars: int = 1000) -> str:
+    """Trim prompt to max_chars."""
     if len(prompt) <= max_chars:
         return prompt
     truncated = prompt[:max_chars]
@@ -860,112 +832,6 @@ def _build_prompt(product: Dict, shot_type: str) -> str:
 
 # ── Low-level API wrappers ────────────────────────────────────────────────────
 
-def _cf_decode_image_body(body: bytes) -> bytes:
-    """Extract raw image bytes from a Cloudflare Workers AI image response.
-
-    CF Workers AI image models may return either:
-    - Raw PNG/JPEG bytes directly (older behaviour)
-    - JSON envelope: {"result": {"image": "<base64>"}, "success": true}
-
-    Returns raw image bytes in both cases.
-    Raises ValueError when the response signals an error.
-    """
-    import base64 as _b64
-    if body[:1] != b"{":
-        return body  # already raw bytes
-    resp = json.loads(body.decode("utf-8", errors="replace"))
-    if not resp.get("success", True):
-        errs = resp.get("errors") or []
-        msg  = errs[0].get("message", str(resp)[:300]) if errs else str(resp)[:300]
-        raise ValueError(f"CF image error: {msg}")
-    img_b64 = (resp.get("result") or {}).get("image", "")
-    if img_b64:
-        return _b64.b64decode(img_b64)
-    # Unexpected shape — surface raw body for debugging
-    raise ValueError(f"CF image: unexpected response shape: {str(resp)[:300]}")
-
-
-def _cf_post_image(prompt: str, max_retries: int = 3) -> bytes:
-    """POST to Cloudflare Workers AI image model; return raw image bytes."""
-    if not CF_AVAILABLE:
-        raise ValueError("CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN not set.")
-    url = (
-        f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}"
-        f"/ai/run/{CF_IMAGE_MODEL}"
-    )
-    payload = json.dumps({"prompt": prompt}).encode("utf-8")
-    headers = {
-        "Authorization": f"Bearer {CF_API_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    last_exc: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
-        req = Request(url=url, data=payload, headers=headers, method="POST")
-        try:
-            with urlopen(req, timeout=120) as resp:
-                body = resp.read()
-            return _cf_decode_image_body(body)
-        except HTTPError as exc:
-            body_err = exc.read().decode("utf-8", errors="replace")
-            last_exc = exc
-            # Code 4006 = daily quota exhausted — permanent, don't retry
-            if '"code":4006' in body_err or "daily free allocation" in body_err:
-                raise ValueError(
-                    "CF daily image quota exhausted (10,000 neurons/day free limit). "
-                    "Upgrade to Workers Paid plan or wait until tomorrow. "
-                    "PIL fallback will be used."
-                ) from exc
-            if exc.code in (429, 503) and attempt < max_retries:
-                delay = 5 * attempt
-                log.warning("CF image HTTP %d attempt %d/%d, retry in %ds", exc.code, attempt, max_retries, delay)
-                time.sleep(delay)
-                continue
-            raise ValueError(f"CF image HTTP {exc.code}: {body_err[:300]}") from exc
-        except URLError as exc:
-            last_exc = exc
-            if attempt < max_retries:
-                time.sleep(5 * attempt)
-                continue
-            raise ValueError(f"CF image connection error: {exc}") from exc
-    raise ValueError(f"CF image failed after {max_retries} attempts: {last_exc}")
-
-
-def _hf_generate_image_bytes(prompt: str) -> bytes:
-    """Generate image via HuggingFace InferenceClient; return PNG bytes."""
-    from huggingface_hub import InferenceClient
-    token = (
-        os.environ.get("HF_TOKEN", "").strip()
-        or os.environ.get("HF_API_KEY", "").strip()
-        or os.environ.get("HUGGINGFACE_API_KEY", "").strip()
-    )
-    if not token:
-        raise ValueError("HF_TOKEN / HF_API_KEY not set.")
-    model = (
-        os.environ.get("HF_IMAGE_MODEL", "").strip()
-        or os.environ.get("HUGGINGFACE_IMAGE_MODEL", "").strip()
-        or "black-forest-labs/FLUX.1-schnell"
-    )
-    client = InferenceClient(token=token)
-    max_retries = int(os.environ.get("HF_MAX_RETRIES", "4") or "4")
-    base_delay  = int(os.environ.get("HF_RETRY_BASE_SECONDS", "10") or "10")
-    last_exc: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            img = client.text_to_image(prompt=prompt, model=model)
-            buf = BytesIO()
-            img.save(buf, format="PNG")
-            return buf.getvalue()
-        except Exception as exc:
-            last_exc = exc
-            msg = str(exc).lower()
-            if any(k in msg for k in ("loading", "503", "429", "rate limit")) and attempt < max_retries:
-                delay = base_delay * attempt
-                log.warning("HF image attempt %d/%d failed (%s), retry in %ds", attempt, max_retries, exc, delay)
-                time.sleep(delay)
-                continue
-            raise ValueError(f"HF image generation failed: {exc}") from exc
-    raise ValueError(f"HF image generation failed after {max_retries} attempts: {last_exc}")
-
 
 def _a1111_generate_image_bytes(prompt: str) -> bytes:
     """Generate image via a local ComfyUI server; return PNG bytes."""
@@ -1523,8 +1389,7 @@ def _generate_one_shot(
         return _pil_fallback_image(product, reference_source, out_path, shot_type=shot_type)
 
     conditioned = _condition_prompt_with_reference(prompt, reference_description, shot_type=shot_type)
-    cf_prompt  = _truncate_prompt(conditioned, max_chars=500)
-    hf_prompt  = _truncate_prompt(conditioned, max_chars=1000)
+    fal_prompt  = _truncate_prompt(conditioned, max_chars=1000)
 
     p = provider.strip().lower()
 
@@ -1534,34 +1399,10 @@ def _generate_one_shot(
         _composite_product_onto_generated(out_path, reference_source, shot_type, product)
         return out_path
 
-    # ── Cloudflare path ───────────────────────────────────────────────────────
-    if p == "cloudflare":
-        if not CF_AVAILABLE:
-            log.warning("CF not available, falling back to PIL for %s", out_path.name)
-        else:
-            try:
-                img_bytes = _cf_post_image(cf_prompt)
-                log.info("CF image saved: %s (%d bytes)", out_path.name, len(img_bytes))
-                return _save_and_composite(img_bytes)
-            except Exception as exc:
-                log.warning("CF image failed for %s: %s — PIL fallback", out_path.name, exc)
-
-    # ── HuggingFace path ──────────────────────────────────────────────────────
-    elif p == "hf":
-        if not HF_AVAILABLE:
-            log.warning("HF not available, falling back to PIL for %s", out_path.name)
-        else:
-            try:
-                img_bytes = _hf_generate_image_bytes(hf_prompt)
-                log.info("HF image saved: %s (%d bytes)", out_path.name, len(img_bytes))
-                return _save_and_composite(img_bytes)
-            except Exception as exc:
-                log.warning("HF image failed for %s: %s — PIL fallback", out_path.name, exc)
-
     # ── AUTOMATIC1111 / ComfyUI local path ───────────────────────────────────
-    elif p == "a1111":
+    if p == "a1111":
         try:
-            img_bytes = _a1111_generate_image_bytes(cf_prompt)
+            img_bytes = _a1111_generate_image_bytes(fal_prompt)
             log.info("A1111 image saved: %s (%d bytes)", out_path.name, len(img_bytes))
             return _save_and_composite(img_bytes)
         except Exception as exc:
@@ -1573,14 +1414,13 @@ def _generate_one_shot(
             log.warning("FAL_KEY not set, falling back to PIL for %s", out_path.name)
         else:
             try:
-                img_bytes = _fal_generate_image_bytes(hf_prompt)
+                img_bytes = _fal_generate_image_bytes(fal_prompt)
                 log.info("fal.ai image saved: %s (%d bytes)", out_path.name, len(img_bytes))
                 return _save_and_composite(img_bytes)
             except Exception as exc:
                 log.warning("fal.ai image failed for %s: %s — PIL fallback", out_path.name, exc)
 
     # ── PIL path (explicit or fallback) ──────────────────────────────────────
-    # PIL already composites the reference product directly — no extra step needed
     return _pil_fallback_image(product, reference_source, out_path, shot_type=shot_type)
 
 
@@ -1602,7 +1442,7 @@ def generateProductImages(
         config: Optional overrides:
                   shots    — tuple/list of shot types to generate (default: all 4)
                   out_dir  — Path for output files
-                  provider — "cloudflare" | "hf" | "pil" (default: AI_PROVIDER env)
+                  provider — "fal" | "a1111" | "pil" (default: AI_PROVIDER env)
                   prefix   — filename prefix (default: sku or product_type)
         reference_description: Pre-computed text description of the reference image
                                (pass the output of _reference_conditioning_text() from

@@ -1590,7 +1590,7 @@ def _fallback_copy_from_first_image(image_source: str, product_name: str) -> Dic
 def ai_generate_copy_from_image(image_source: str, product_name: str) -> Dict:
     """Generate Amazon listing copy from an image using the best available AI provider.
 
-    Works with Gemini, Cloudflare, or HuggingFace — no HF_TOKEN required.
+    Uses Groq for image analysis and copy generation.
     `image_source` can be a public URL or a local file path.
     """
     src = (image_source or "").strip()
@@ -2987,7 +2987,7 @@ def groq_analyze_image_url(image_url: str, product_name: str = "") -> Dict[str, 
     """Analyze a product image using Groq's Llama vision model.
 
     Free tier: 100 req/day. Skips immediately when the daily budget is exhausted
-    so large batches don't waste a round-trip before falling back to Gemini/CF.
+    so large batches don't waste a round-trip on quota errors.
     """
     if not _groq_vision_available():
         raise ValueError("Groq vision daily limit reached — falling back to next provider.")
@@ -3043,7 +3043,7 @@ def groq_generate_listing(product_analysis: Dict[str, Any], seller_notes: str = 
     """Generate Amazon listing copy via Groq (llama-3.1-8b-instant).
 
     Free tier: 14,400 req/day. Bails immediately on daily quota errors so the
-    caller's fallback chain moves to HF/Gemini/CF without wasted retries.
+    caller's fallback chain moves to the local heuristic without wasted retries.
     Uses _GROQ_TEXT_SEM to cap concurrent calls and stay under TPM limit.
     """
     if not _groq_text_available():
@@ -7752,7 +7752,7 @@ def api_process_combo_catalog_stream():
       image_catalog_path  str   path returned by /api/upload-image-catalog
       max_combo_size      int   max combo size; generates all sizes 2…N (default 2)
       max_combos          int   cap on total combos (default 1500)
-      provider            str   AI provider ("groq", "gemini", …)
+      provider            str   AI provider ("groq")
       brand_name          str   seller brand applied to every combo row
       seller_notes        str   optional seller description text
       generate_images     bool  whether to generate AI lifestyle images (default true)
