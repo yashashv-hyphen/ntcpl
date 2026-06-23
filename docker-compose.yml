@@ -1,15 +1,16 @@
 version: "3.9"
 
-# network_mode: host bypasses CNI entirely, fixing Podman/WSL2 CNI plugin
-# version errors. Both services share the host network stack directly.
-# Ports 7860 (web UI) and 7861 (image service) are accessible on localhost.
+networks:
+  app-net:
+    driver: bridge
 
 services:
 
   image-service:
     build: .
-    command: bash -c "fuser -k 7861/tcp 2>/dev/null || true; sleep 1; python image_service.py"
-    network_mode: host
+    command: python image_service.py
+    networks:
+      - app-net
     env_file:
       - .env
     environment:
@@ -22,12 +23,15 @@ services:
 
   excel-service:
     build: .
-    command: bash -c "fuser -k 7860/tcp 2>/dev/null || true; sleep 1; python amazon_template_autofill_web.py --host 0.0.0.0 --port 7860"
-    network_mode: host
+    command: python amazon_template_autofill_web.py --host 0.0.0.0 --port 7860
+    networks:
+      - app-net
+    ports:
+      - "7860:7860"
     env_file:
       - .env
     environment:
-      IMAGE_SERVICE_URL: http://localhost:7861
+      IMAGE_SERVICE_URL: http://image-service:7861
     volumes:
       - ./generated_images:/app/generated_images
       - uploaded_images:/app/uploaded_product_images
